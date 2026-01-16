@@ -35,10 +35,16 @@ async function download(url, type, quality) {
   return r.data;
 }
 
+// ہوم پیج کے لیے (تاکہ 404 نہ آئے)
+app.get('/', (req, res) => {
+  res.json({ status: "Server is running", message: "Use /api/download?query=YOUR_SEARCH" });
+});
+
+// ڈاؤن لوڈ API
 app.get('/api/download', async (req, res) => {
   const { query, type, quality } = req.query;
   
-  if (!query) return res.status(400).json({ error: "Query parameters (query) is required" });
+  if (!query) return res.status(400).json({ error: "Query parameter is required" });
 
   try {
     let url = query;
@@ -62,6 +68,12 @@ app.get('/api/download', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// سرور پورٹ سیٹنگ
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });
 
 module.exports = app;
