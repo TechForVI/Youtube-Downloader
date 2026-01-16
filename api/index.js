@@ -2,9 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-const videoquality = ['1080', '720', '480', '360', '240', '144'];
-const audiobitrate = ['128', '320'];
-
+// سرچ فنکشن
 async function search(q) {
   const r = await axios.get('https://yt-extractor.y2mp3.co/api/youtube/search?q=' + encodeURIComponent(q), {
     headers: {
@@ -19,6 +17,7 @@ async function search(q) {
   return i;
 }
 
+// ڈاؤن لوڈ فنکشن
 async function download(url, type, quality) {
   const payload = type === 'mp4' 
     ? { url, downloadMode: 'video', brandName: 'ytmp3.gg', videoQuality: String(quality), youtubeVideoContainer: 'mp4' }
@@ -35,30 +34,28 @@ async function download(url, type, quality) {
   return r.data;
 }
 
-// ہوم پیج کے لیے (تاکہ 404 نہ آئے)
+// مین روٹ
 app.get('/', (req, res) => {
-  res.json({ status: "Server is running", message: "Use /api/download?query=YOUR_SEARCH" });
+  res.status(200).json({ status: "Online", message: "YTDL API is running successfully!" });
 });
 
-// ڈاؤن لوڈ API
+// ڈاؤن لوڈ اینڈ پوائنٹ
 app.get('/api/download', async (req, res) => {
   const { query, type, quality } = req.query;
-  
-  if (!query) return res.status(400).json({ error: "Query parameter is required" });
+  if (!query) return res.status(400).json({ error: "Query is required" });
 
   try {
     let url = query;
-    let info = { title: "Unknown", id: query };
+    let info = { title: "Unknown", thumbnailUrl: "" };
 
     if (!/^https?:\/\//i.test(query)) {
-      const searchResult = await search(query);
-      url = searchResult.id;
-      info = searchResult;
+      const s = await search(query);
+      url = s.id;
+      info = s;
     }
 
     const dl = await download(url, type || 'mp3', quality || '320');
-    
-    res.json({
+    res.status(200).json({
       success: true,
       title: info.title,
       thumbnail: info.thumbnailUrl,
@@ -68,12 +65,6 @@ app.get('/api/download', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
-});
-
-// سرور پورٹ سیٹنگ
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
 });
 
 module.exports = app;
